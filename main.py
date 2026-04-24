@@ -1,5 +1,9 @@
+import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+
+# إعداد السجلات لمتابعة الأخطاء
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 TOKEN = '8553205225:AAHION1wwLt6-_XrGOT4--ZuYxSDyvPuFCM'
 
@@ -10,14 +14,22 @@ BAD_WORDS = [
 ]
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.lower()
-    for word in BAD_WORDS:
-        if word in text:
-            await update.message.delete()
-            break
+    if update.message and update.message.text:
+        text = update.message.text.lower()
+        for word in BAD_WORDS:
+            if word in text:
+                try:
+                    await update.message.delete()
+                    break
+                except Exception as e:
+                    print(f"Error deleting message: {e}")
 
 if __name__ == '__main__':
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT, handle_message))
-    app.run_polling()
-    
+    try:
+        app = ApplicationBuilder().token(TOKEN).build()
+        app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+        print("Bot is starting...")
+        app.run_polling()
+    except Exception as e:
+        print(f"CRITICAL ERROR: {e}")
+        
